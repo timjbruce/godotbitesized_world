@@ -1,7 +1,8 @@
-[gd_scene load_steps=3 format=3 uid="uid://btodygqofqpu"]
+[gd_scene load_steps=4 format=3 uid="uid://btodygqofqpu"]
 
 [ext_resource type="Script" uid="uid://dxtcnu80fqt1k" path="res://World/world.gd" id="1_8a836"]
 [ext_resource type="PackedScene" uid="uid://cgriwo0usw01p" path="res://Player/Player.tscn" id="1_62w18"]
+[ext_resource type="PackedScene" uid="uid://chb2vey7267e1" path="res://Generator/generator.tscn" id="3_j8job"]
 
 [node name="World" type="Node2D"]
 script = ExtResource("1_8a836")
@@ -9,3 +10,10 @@ script = ExtResource("1_8a836")
 [node name="GlobalTimer" type="Timer" parent="."]
 
 [node name="Player" parent="." instance=ExtResource("1_62w18")]
+
+[node name="Generator" parent="." instance=ExtResource("3_j8job")]
+min_room_width = 50
+min_room_height = 50
+max_room_width = 75
+max_room_height = 75
+draw_outline = true
