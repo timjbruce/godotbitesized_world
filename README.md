@@ -120,3 +120,100 @@ Your window should now have the "World" scene running in your game and you shoul
 ![Use the override the in-game camera to watch your player move around, and off, the screen](readmeassets/build_1/1_override_camera.png)
 
 Happy Building and I'll see you for the next component build!
+
+## Build 2
+**Build 2 is in Godot 4.5.1**
+
+For Build 2, we're adding the Generator to the project and generating a room. Now, the room will be more like something painted in, for the time being - the Player component does not have physics added to it. But, we are going to integrate the rendering. In the next couple of builds, we will add this functionality.
+
+### Copy the Generator folder into the project
+
+For the first step, copy the Generator component into your World project.
+
+![Your updated filesystem should include the Generator folder and the generator objects](/readmeassets//build_2/2_Updated_FileSystem_with_Generator.png)
+
+### Set Layer Names
+
+Next, select the Project -> Project Settings menu. Navigate to the "Layer Names" section and click on "2D Render." Here, we're going to add the names of different nodes and the layer they will use. Enter "World" on Layer 1 and "Player" on Layer 3. Click "Close" when you are done.
+
+![Add layer names for the World and Player objects](/readmeassets/build_2/2_Add_Layer_Names.png)
+
+### Update Globals.gd
+
+Next, open the Globals.gd script. We're going to add in a variable and function to handle saving the generator. Add the following code at the bottom of the variable declarations.
+
+```
+var generator: Generator
+```
+
+And add the following function at the bottom of the file
+
+```
+func set_generator(inc_generator: Generator) -> void:
+	generator = inc_generator
+```
+
+### Update the World scene
+
+Next, open the World scene so that we can add the Generator to it. With the scene open, click and drag the `generator.tscn` file to the "World" node in your Scene window. Your scene should be updated to look like this:
+
+![Add the generator to the scene as a child of the World node](/readmeassets/build_2/2_Add_Generator_To_Scene.png)
+
+Let's add some code to the the world.gd script. Open the script and add the following lines to the `_ready()` function.
+
+```
+	Globals.set_generator($Generator)
+	Globals.generator.floor_generated.connect(_on_floor_generated)
+	Globals.generator.floor_is_cleared.connect(_on_floor_cleared)
+	Globals.generator.generate()
+```
+
+Also, add the following functions at the bottom of the file:
+
+```
+func _on_floor_generated() -> void:
+	print("floor generated message received")
+	
+
+func _on_floor_cleared() -> void:
+	print("floor cleared message received")
+```
+
+Your world.gd script should look like this:
+
+```
+extends Node2D
+
+func _ready() -> void:
+	Globals.set_world($".")
+	Globals.set_player($Player)
+	Globals.set_global_timer($GlobalTimer)
+	Globals.set_generator($Generator)
+	Globals.generator.floor_generated.connect(_on_floor_generated)
+	Globals.generator.floor_is_cleared.connect(_on_floor_cleared)
+	Globals.generator.generate()
+	
+
+func _on_floor_generated() -> void:
+	print("floor generated message received")
+	
+
+func _on_floor_cleared() -> void:
+	print("floor cleared message received")
+```
+
+Before we run this, we're going to make a small change to our Generator via the Inspector window. Click on the Generator in the Scene window and look at the Inspector window. We're going to change the Min Room Width and Min Room Height to 50. We're also going to update the Max Room Width and Max Room Heights to 75. Since these variables have been exported, we can make changes for the project we are working on without changing the code in the files. We will also turn on the "Draw Outline" setting. Your Inspector window should look like this.
+
+![Update the Generator settings for room width and height and also turn on the Draw Outline feature](/readmeassets/build_2/2_Update_Generator_via_Inspector.png)
+
+### On to testing!
+
+Run the game by pressing F5. Your game window should appear and look something like this
+
+![Your game world should now have a brown line for the room and your player is on the upper left corner](/readmeassets/build_2/2_game_running.png)
+
+Move the player around to the right and down. You should see the size of your room that was drawn. You'll also see some blue lines, denoting the outside area for your game width and height.
+
+![Explore the game and see the room and game world boundaries](/readmeassets/build_2/2_room_and_game_boundary.png)
+
+Try out some other settings for the room generator and see how they work! Next, we'll add in some small changes to the generator, to select where the player starting location is, and to the player to keep the player from crossing the wall boundaries.
