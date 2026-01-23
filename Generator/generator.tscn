@@ -9,6 +9,7 @@ texture = ExtResource("3_ys12v")
 0:0/0 = 0
 0:0/0/terrain_set = 0
 0:0/0/terrain = 0
+0:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-8, -8, 8, -8, 8, 8, -8, 8)
 1:0/0 = 0
 2:0/0 = 0
 2:0/0/terrain_set = 0
@@ -36,6 +37,8 @@ texture = ExtResource("3_ys12v")
 9:1/0 = 0
 
 [sub_resource type="TileSet" id="TileSet_hy0so"]
+physics_layer_0/collision_layer = 2
+physics_layer_0/collision_mask = 0
 terrain_set_0/mode = 0
 terrain_set_0/terrain_0/name = "Wall"
 terrain_set_0/terrain_0/color = Color(0.5, 0.34375, 0.25, 1)
