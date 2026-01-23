@@ -20,6 +20,7 @@ func _ready() -> void:
 		game_height, tile_map_layer, draw_outline)
 	if get_parent().name == "root":
 		$GeneratorNode.generate()
+		print(get_player_start())
 		floor_generated.emit()
 
 
@@ -31,3 +32,7 @@ func generate() -> void:
 func clear_floor() -> void:
 	$GeneratorNode.clear_floor()
 	floor_is_cleared.emit()
+
+
+func get_player_start() -> Vector2:
+	return $GeneratorNode.get_player_start()

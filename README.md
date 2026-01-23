@@ -7,6 +7,8 @@ This repo represents the Godot Bite Sized World - 2D. What is a Bite Sized World
 
 [Build 2](#build-2) - Add the Generator component and generate a simple room
 
+[Build 3](#build-3) - Integrate the updated Generator and Player components
+
 ## Build 1
 **Build 1 is in Godot 4.5.1**
 
@@ -223,3 +225,43 @@ Move the player around to the right and down. You should see the size of your ro
 ![Explore the game and see the room and game world boundaries](/readmeassets/build_2/2_room_and_game_boundary.png)
 
 Try out some other settings for the room generator and see how they work! Next, we'll add in some small changes to the generator, to select where the player starting location is, and to the player to keep the player from crossing the wall boundaries.
+
+## Build 3
+
+Build 3 is going to update the Player and the Generator components in your World project. One question you might have is "Why didn't we just do this work in the World project? We already have the Player and the Generator there." Well, yes, you could have. But, if you want to re-use these components, I find it easier to have their own project and folder structures that you can build and test in without having to load up your full game! Some of your games, like mine, will get quite large and this method makes updates to these smaller components faster. It also helps keep me focused on the change that I'm making, versus being distracted by a number of other changes!
+
+Before you open the World project in Godot, go to your Explorer, Finder, or other interface and copy the updated Player and Generator components into your World folder. Since our components are in their own sub-folders, this is simply copying the `Player` folder from your Player project and the `Generator` folder from your Generator project to your World project folder. Your file system should look like this:
+
+![Updated file system for your World project should have World, Player, and Generator folders](/readmeassets/build_3/3_updated_file_system.png)
+
+Next, we're going to open up the `world.gd` file and start coding for our updated components! First, we'll add in a resource loader for our player_body.
+
+Now, remove the line that reads `Globals.set_player($Player)` from this file. We're going to dynamically load the player into the game and remove it from the scene shortly.
+
+After removing that line, let's update `_on_floor_generated` to instantiate the player, register it with Globals, initialize it, and set the location. The updated function should look like this.
+
+```
+func _on_floor_generated() -> void:
+	print("floor generated message received")
+	var player_resource: Node2D = preload("res://Player/player.tscn").instantiate()
+	Globals.set_player(player_resource)
+	Globals.world.add_child(Globals.player)
+	Globals.player.initialize("player", 600, [], [2])
+	Globals.player.set_location(Globals.generator.get_player_start())
+
+```
+
+---
+**NOTE**
+
+A few notes about using preload: Preload loads the object at compile time versus load, which loads at runtime. This allows the player to be ready faster. We are also doing the preload in the function where the player is needed for the time being. As we add enemies and enemy spawn points during a floor, it might be better to preload this one time for all those uses. Also, if we had more than one floor, it might be better to have the player loaded once.
+
+Also, the resource loader returns an object of type "Resource," and not the class of the resource itself. Node2D gives the compiler that this is a Node2D-based object. We could have also used PackedScene for the compiler hint instead of Node2D.
+
+---
+
+Finally, open the World scene and remove the Player node. The updated scene should look like this.
+
+![Remove the player node from your World scene](/readmeassets/build_3/3_player_removed_from_scene.png)
+
+Now save your project and run it with F5. You'll see your player is spawned into a room and can only move on the floor. The player is stopped at the wall.
