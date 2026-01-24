@@ -267,3 +267,150 @@ Finally, open the World scene and remove the Player node. The updated scene shou
 ![Remove the player node from your World scene](/readmeassets/build_3/3_player_removed_from_scene.png)
 
 Now save your project and run it with F5. You'll see your player is spawned into a room and can only move on the floor. The player is stopped at the wall.
+
+## Build 4
+
+Build 4 integrates the Player component that introduced Player types. We're going to spawn a player and an enemy into the same room.
+
+### Update the Player
+
+Before you open the project, copy the new Player component into the appropriate folder for your World project. Then, open the prooject.
+
+If you open the `world.gd` file, you will see that we now get an error on the line for `Globals.player.initialize`. This is because we've added new parameters to the `initialize` function in the "Player" component. We will fix this line of code during our work integrating the new Player component.
+
+### Update of Globals
+
+Before we do, open the `Globals.gd` file. We're going to add a new member variable to Globals to hold the enemies. We want to have many enemies, so we're going to use an array to track them.
+
+```
+var enemies: Array[player_2d_body]
+```
+
+Next, we'll add a function to allow an enemy to be added to the array.
+
+```
+func add_enemy(inc_enemy: player_2d_body) -> void:
+	enemies.append(inc_enemy)
+```
+
+Save the globals.gd file and let's move to update the World scene.
+
+### Update of World scene
+
+Before we add code to the world.gd file to spawn the Player and Enemy, we want to create an asset that will have the AnimatedSprite2D that we'll use for the Enemy characters. You might make many games and your enemies will probably need to look different. You might even make a boss enemy that looks drastically different for this game. This feature will help you to do that easily.
+
+First, open the World scene and then click on the "World" node in the Scene window. Right click and choose "+ Add Child Node..." Search for "AnimatedSprite2D" and add it to the scene so that it looks like this.
+
+![Add an animatedsprite2d node to the World scene](/readmeassets/build_4/4_add_animated_sprite_2d.png)
+
+Double click on the AnimatedSprite2D and rename it to "EnemySpriteAnimation"
+
+![Rename animatedsprite2d to EnemySpriteAnimation](/readmeassets/build_4/4_rename_animation_to_enemy_sprite_animation.png)
+
+In this repository, locate the folder /World/assets and copy the 4 PNGs located there to your projects World/asset folder. You will need to create this folder before copying the files.
+
+Next, click on the EnemySpriteAnimation node and look at the Inspector window. We will need to add Sprite Frames to this object. Do so by clicking the down arrow that is highlighted below and selecting "New Sprite Frames."
+
+![Add sprite frames to the EnemySpriteAnimation](/readmeassets/build_4/4_add_sprite_frames.png)
+
+Click on the field that reads "SpriteFrames" to open the Animations window on the bottom.
+
+![Load the Animation window by clicking on the SpriteFrames value in the Inspector](/readmeassets/build_4/4_load_the_animation_window.png)
+
+We are going to add the Animations for walk, down, up, and idle to this object using the assets we copied. First, click the "Add Animation" button 3 times so there are four animations listed. Then, rename the animations so it looks like this:
+
+![Add 3 animations to the list and name them idle, walk, up, and down](/readmeassets/build_4/4_add_and_rename_animations.png)
+
+Next, we're going to add frames from sheet sheets. You will click the Add Frames From Sprite Sheet button, locate the appropriate enemy file in your "World/assets" folder and then select the animation frames to add. You might need to update the horizontal and vertical frames for the images. If you need a reminder of this, please see the [Player Build 1](https://github.com/timjbruce/godotbitesized_player/blob/main/readme.MD#build-1). Your end product should look similar to this:
+
+![Add animations to each of the Animations listed using the files that are in the World/assets folder.](/readmeassets/build_4/4_add_sprite_frames.png)
+
+Then, go back to the Inspector window and locate the Texture -> Filter setting. Change this value to "Nearest".
+
+![Change the Texture Filter setting to Nearest for the EnemySpriteAnimation](/readmeassets/build_4/4_set_filter_to_nearest.png)
+
+Finally, we want to hide this asset from within the World scene. In the Scene window, click the eye icon so that this is hidden.
+
+![Hide the animation in the scene by clicking the eye icon so that it shows as closed](/readmeassets/build_4/4_hide_animation.png)
+
+### On to coding! Updates for the world.gd file
+
+Open the `world.gd` file in the editor. We're going to make a few changes here so that we can spawn a player and an enemy in the same room. All of the changes are in `_on_floor_generated`. Let's walk through them
+
+```
+func _on_floor_generated() -> void:
+	print("floor generated message received")
+	var player_resource: PackedScene = preload("res://Player/player.tscn")
+	var player: player_2d_body = player_resource.instantiate()
+	Globals.set_player(player)
+	Globals.world.add_child(Globals.player)
+	var player_layers: Array[int] =  [3]
+	var player_masks: Array[int] = [2, 4]
+	Globals.player.initialize("player", 700, player_layers, player_masks, player_2d_body.PlayerType.Player, null)
+	Globals.player.set_location(Globals.generator.get_player_start())
+	var enemy: player_2d_body = player_resource.instantiate()
+	Globals.add_enemy(enemy)
+	Globals.world.add_child(enemy)
+	var enemy_layers: Array[int] = [4]
+	var enemy_masks: Array[int] = [2, 3]
+	Globals.enemies[0].initialize("enemy_0", 300, enemy_layers, enemy_masks, player_2d_body.PlayerType.Enemy, $EnemySpriteAnimation)
+	Globals.enemies[0].set_location(Globals.generator.get_player_start())
+```
+
+First, we changed the preload to not instantiate a player. This is because we'll use the same resource to create multiple instances. In the first lines, we create a player, add it to Globals, add it as a child, and then initialize it using variables along the way. Finally, we set its location. We do the same process with an enemy, and you can see we use different layers and masks. Basically, this will prevent the player from colliding with the enemy. In the initialization call, we pass the `$EnemySpriteAnimation` to it. As such, our enemy should come into this game with this green animation, versus our standard player animation. Let's try it by saving the project and running it.
+
+There's probably some questions out there on the `initialize` call signature changing between versions and shouldn't components not have this issue. It does seem like this causes a level of coupling between the World and different components. Unfortunately, this is hard to avoid in Godot. Many languages offer what is called "overloading," or offering the same function name with different parameters. With overloading, we could create a second `initialize` function that would take the extra parameters and leave the first one in place. We could manage the missing values in script and this can get a bit messy, over time, if you don't do it well. Godot script, today, does not support overloading so we need to make a call between passing as a dictionary or passing by named variables.
+
+Passing by dictionary can lead to a set of troubleshooting and researching while implementing a component or a component update. You need to know the name of the dictionary elements and the variable types. In the IDE in Godot, if you enter a function name that accepts a dictionary, the tooltip will show up that it needs to receive a dictionary and not all of these details. Additionally, you cannot use type hints today for every type of variable that could be passed in the dictionary. This leads to a subpar developer experience, imho.
+
+I definitely prefer denoting variables and variable types in the function calls directly for these reasons. It allows a much tighter checking at compile time than defining and passing a dictionary, where many values might be incorrect or even missing. If this happens, your players might run into issues playing your games and become frustrated. 
+
+<details>
+<summary>Updated world.gd file</summary>
+
+```
+extends Node2D
+
+func _ready() -> void:
+	Globals.set_world($".")
+	Globals.set_global_timer($GlobalTimer)
+	Globals.set_generator($Generator)
+	Globals.generator.floor_generated.connect(_on_floor_generated)
+	Globals.generator.floor_is_cleared.connect(_on_floor_cleared)
+	Globals.generator.generate()
+
+
+func _on_floor_generated() -> void:
+	print("floor generated message received")
+	var player_resource: PackedScene = preload("res://Player/player.tscn")
+	var player: player_2d_body = player_resource.instantiate()
+	Globals.set_player(player)
+	Globals.world.add_child(Globals.player)
+	var player_layers: Array[int] =  [3]
+	var player_masks: Array[int] = [2, 4]
+	Globals.player.initialize("player", 700, player_layers, player_masks, player_2d_body.PlayerType.Player, null)
+	Globals.player.set_location(Globals.generator.get_player_start())
+	var enemy: player_2d_body = player_resource.instantiate()
+	Globals.add_enemy(enemy)
+	Globals.world.add_child(enemy)
+	var enemy_layers: Array[int] = [4]
+	var enemy_masks: Array[int] = [2, 3]
+	Globals.enemies[0].initialize("enemy_0", 300, enemy_layers, enemy_masks, player_2d_body.PlayerType.Enemy, $EnemySpriteAnimation)
+	Globals.enemies[0].set_location(Globals.generator.get_player_start())
+	
+
+func _on_floor_cleared() -> void:
+	print("floor cleared message received")
+
+```
+
+</details>
+
+
+### Voila!
+
+You might have to move around a bit in your room, depending on the settings and spawn locations, but you should see output similar to this.
+
+![Your game now has an enemy, although it doesn't move!](/readmeassets/build_4/4_your_player_and_enemy.png)
+
+In the next lesson, we're going to add some more features to the player

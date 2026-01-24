@@ -167,7 +167,7 @@ animation = &"down"
 position = Vector2(2, 4.5)
 shape = SubResource("RectangleShape2D_ddoul")
 
-[node name="Label" type="Label" parent="."]
+[node name="PlayerTypeLabel" type="Label" parent="."]
 offset_left = -26.0
 offset_top = -49.0
 offset_right = 23.0
