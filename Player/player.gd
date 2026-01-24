@@ -1,16 +1,41 @@
 extends CharacterBody2D
 class_name player_2d_body
 
+enum PlayerType { Player, Enemy, NPC }
+
 @export var speed: int = 600
+@export var type: PlayerType = PlayerType.Player 
+@export var animation: AnimatedSprite2D = null
+
+var _x_direction: float = 0.0
+var _y_direction: float = 0.0
 
 
-func initialize(inc_name: String, inc_speed: int, inc_layers: Array[int], inc_mask: Array[int]) -> void:
-	name = inc_name
-	speed = inc_speed
-	for layer in inc_layers:
-		set_collision_layer_value(layer, true)
-	for mask in inc_mask:
-		set_collision_mask_value(mask, true)
+func _ready() -> void:
+	if get_parent().name == "root":
+		initialize("Tim", 500, [3], [2], PlayerType.Player, null)
+
+
+func initialize(inc_name: String, inc_speed: int, inc_layers: Array[int], inc_mask: Array[int], 
+	inc_type: PlayerType, inc_animation: AnimatedSprite2D = null) -> void:
+		name = inc_name
+		speed = inc_speed
+		type = inc_type
+		match type:
+			PlayerType.Player:
+				$PlayerTypeLabel.text = "Player"
+			PlayerType.Enemy:
+				$PlayerTypeLabel.text = "Enemy"
+			PlayerType.NPC:
+				$PlayerTypeLabel.text = "NPC"
+			_:
+				"!!!!!!!"
+		if inc_animation:
+			$AnimatedSprite2D.sprite_frames = inc_animation.sprite_frames
+		for layer in inc_layers:
+			set_collision_layer_value(layer, true)
+		for mask in inc_mask:
+			set_collision_mask_value(mask, true)
 
 
 func set_location(new_location: Vector2i) -> void:
@@ -18,14 +43,15 @@ func set_location(new_location: Vector2i) -> void:
 
 
 func _process(_delta: float) -> void:
-	var x_direction: float = Input.get_axis("left", "right")
-	var y_direction: float = Input.get_axis("up", "down")
-	if x_direction:
-		velocity.x = x_direction * speed
+	if type == PlayerType.Player:
+		_x_direction = Input.get_axis("left", "right")
+		_y_direction = Input.get_axis("up", "down")
+	if _x_direction:
+		velocity.x = _x_direction * speed
 	else:
 		velocity.x = move_toward(velocity.x, 0, speed)
-	if y_direction:
-		velocity.y = y_direction * speed
+	if _y_direction:
+		velocity.y = _y_direction * speed
 	else:
 		velocity.y = move_toward(velocity.y, 0, speed)
 		
