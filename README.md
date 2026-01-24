@@ -359,6 +359,12 @@ func _on_floor_generated() -> void:
 
 First, we changed the preload to not instantiate a player. This is because we'll use the same resource to create multiple instances. In the first lines, we create a player, add it to Globals, add it as a child, and then initialize it using variables along the way. Finally, we set its location. We do the same process with an enemy, and you can see we use different layers and masks. Basically, this will prevent the player from colliding with the enemy. In the initialization call, we pass the `$EnemySpriteAnimation` to it. As such, our enemy should come into this game with this green animation, versus our standard player animation. Let's try it by saving the project and running it.
 
+There's probably some questions out there on the `initialize` call signature changing between versions and shouldn't components not have this issue. It does seem like this causes a level of coupling between the World and different components. Unfortunately, this is hard to avoid in Godot. Many languages offer what is called "overloading," or offering the same function name with different parameters. With overloading, we could create a second `initialize` function that would take the extra parameters and leave the first one in place. We could manage the missing values in script and this can get a bit messy, over time, if you don't do it well. Godot script, today, does not support overloading so we need to make a call between passing as a dictionary or passing by named variables.
+
+Passing by dictionary can lead to a set of troubleshooting and researching while implementing a component or a component update. You need to know the name of the dictionary elements and the variable types. In the IDE in Godot, if you enter a function name that accepts a dictionary, the tooltip will show up that it needs to receive a dictionary and not all of these details. Additionally, you cannot use type hints today for every type of variable that could be passed in the dictionary. This leads to a subpar developer experience, imho.
+
+I definitely prefer denoting variables and variable types in the function calls directly for these reasons. It allows a much tighter checking at compile time than defining and passing a dictionary, where many values might be incorrect or even missing. If this happens, your players might run into issues playing your games and become frustrated. 
+
 <details>
 <summary>Updated world.gd file</summary>
 
@@ -407,4 +413,4 @@ You might have to move around a bit in your room, depending on the settings and 
 
 ![Your game now has an enemy, although it doesn't move!](/readmeassets/build_4/4_your_player_and_enemy.png)
 
-In
+In the next lesson, we're going to add some more features to the player
