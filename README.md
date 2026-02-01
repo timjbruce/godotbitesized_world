@@ -9,6 +9,10 @@ This repo represents the Godot Bite Sized World - 2D. What is a Bite Sized World
 
 [Build 3](#build-3) - Integrate the updated Generator and Player components
 
+[Build 4](#build-4) - Multiple Player Types
+
+[Build 5](#build-5) - NPC and Enemy Movement Integration
+
 ## Build 1
 **Build 1 is in Godot 4.5.1**
 
@@ -414,3 +418,70 @@ You might have to move around a bit in your room, depending on the settings and 
 ![Your game now has an enemy, although it doesn't move!](/readmeassets/build_4/4_your_player_and_enemy.png)
 
 In the next lesson, we're going to add some more features to the player
+
+## Build 5
+
+For this build, we're going to update the player_2d_body component for the World project. To start, do not have either project open and copy the "Player" folder from the Player component to the World folder. Replace the existing Player folder and objects. Next, open the World project.
+
+When the project opens, it should highlight two lines of code that need to be updated. This is from the change of where the Enum for PlayerType was updated. Change these two lines to use `PlayerShared.PlayerType.Player` and `PlayerShared.PlayerType.Enemy` like so:
+
+```
+	Globals.player.initialize("player", 700, player_layers, player_masks, PlayerShared.PlayerType.Player, null)
+	Globals.enemies[0].initialize("enemy_0", 300, enemy_layers, enemy_masks, PlayerShared.PlayerType.Enemy, $EnemySpriteAnimation)
+```
+
+Now, run the project. Move your Player in front of the Enemy to see if you can get it to follow you.
+
+![Get the enemy to chase you](/readmeassets/build_5/5_enemy_chasing.png)
+
+It might be hard to determine what direction the enemy is facing. Also, we don't have an NPC. So, let's update the code where we add more enemies and an NPC to the mix. Update the `_on_floor_generated` function to this:
+
+```
+func _on_floor_generated() -> void:
+	print("floor generated message received")
+	var player_resource: PackedScene = preload("res://Player/player.tscn")
+	var player: player_2d_body = player_resource.instantiate()
+	Globals.set_player(player)
+	Globals.world.add_child(Globals.player)
+	var player_layers: Array[int] =  [3]
+	var player_masks: Array[int] = [2, 4, 5]
+	Globals.player.initialize("player", 700, player_layers, player_masks, PlayerShared.PlayerType.Player, null)
+	Globals.player.set_location(Globals.generator.get_player_start())
+	var enemy: player_2d_body
+	var enemy_layers: Array[int] = [4]
+	var enemy_masks: Array[int] = [2, 3, 4, 5]
+	for i in range(0,2):
+		enemy = player_resource.instantiate()
+		Globals.add_enemy(enemy)
+		Globals.world.add_child(enemy)
+		Globals.enemies[i].initialize("enemy_" + str(i), 300, enemy_layers, enemy_masks, PlayerShared.PlayerType.Enemy, $EnemySpriteAnimation)
+		Globals.enemies[i].set_location(Globals.generator.get_player_start())
+	var npc: player_2d_body
+	var npc_layers: Array[int] = [5]
+	var npc_masks: Array[int] = [2, 3, 4, 5]
+	for i in range(0,1):
+		npc = player_resource.instantiate()
+		Globals.add_npc(npc)
+		Globals.world.add_child(npc)
+		Globals.enemies[i].initialize("npc_" + str(i), 350, npc_layers, npc_masks, PlayerShared.PlayerType.Enemy, $EnemySpriteAnimation)
+		Globals.enemies[i].set_location(Globals.generator.get_player_start())
+```
+
+This will add two Enemies and one NPC. We also need to add the `add_npc` function to the "Globals.gd" file, as well as a variable to hold the npcs. Add the following line right after the `var enemies:` line at the top of the script.
+
+```
+var npcs: Array[player_2d_body]
+```
+
+And then add the following function to the file:
+
+```
+func add_npc(inc_npc: player_2d_body) -> void:
+	npcs.append(inc_npc)
+```
+
+Lastly, we're going to turn on debug mode for collisions. This might help you if you want to add more enemies and NPCs to the mix. Go to the Debug Menu and click on "Visible Collision Shapes". Now hit F5 to run the project.
+
+![Enemies have trapped the player!](/readmeassets/build_5/5_enemies_trapped_my_player.png)
+
+Play around with the speeds and numbers of the Enemies, NPCs!
