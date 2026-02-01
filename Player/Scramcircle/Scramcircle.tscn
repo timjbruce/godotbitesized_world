@@ -1,0 +1,12 @@
+[gd_scene load_steps=3 format=3 uid="uid://d1a8gktwk5730"]
+
+[ext_resource type="Script" uid="uid://xlcs0fdxo50" path="res://Player/Scramcircle/scramcircle.gd" id="1_g18f1"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_2h010"]
+radius = 100.0
+
+[node name="Scramcircle" type="ShapeCast2D"]
+shape = SubResource("CircleShape2D_2h010")
+target_position = Vector2(0, 0)
+collision_mask = 0
+script = ExtResource("1_g18f1")
