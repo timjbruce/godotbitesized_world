@@ -55,8 +55,8 @@ script = ExtResource("1_8emip")
 rows = 2
 columns = 2
 min_space_between_rooms = 0
-max_room_width = 20
-max_room_height = 20
+max_room_width = 25
+max_room_height = 25
 tile_map_layer = NodePath("DefaultTileMap")
 
 [node name="GeneratorNode" type="Control" parent="."]

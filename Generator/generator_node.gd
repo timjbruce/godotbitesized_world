@@ -1,109 +1,198 @@
 extends Control
 class_name GeneratorNode
 
-var min_room_width: int = 3
-var min_room_height: int = 3
-var max_room_width: int = 500
-var max_room_height: int = 500
-var game_width: int = 1600
-var game_height: int = 1200
-var tile_map_layer: TileMapLayer = null
-var draw_outline: bool = false
+var generator_data: GeneratorData = null
 
-var wall_vector: Vector2i
-var floor_vector: Vector2i
-var filler_vector: Vector2i
-var exit_vector: Vector2i
+var wall_vector: Array[Vector2i]
+var floor_vector: Array[Vector2i]
+var filler_vector: Array[Vector2i]
+var exit_vector: Array[Vector2i]
+var blocked_blocks: Array[Vector2i]
 var wall_tile_quadrant_size: int = 0
 
-var room_listing: Dictionary
+var grid: Dictionary = {}
+var room_listing: Dictionary = {}
+var hallways: Dictionary = {}
 
+enum TileLayer {
+	Wall, Floor, Filler, Exit
+}
 
 func clear_floor() -> void:
 	room_listing = {}
-	tile_map_layer.clear()
+	generator_data.tile_map_layer.clear()
 
 
 func generate() -> void:
-	var grid: Dictionary = {Vector2i(0,0): {"x_start": 0, "y_start": 0}}
-	room_listing = _generate_room(grid)
+	#create a grid that we can iterate around
+	for x in range(0, generator_data.columns):
+		for y in range(0,generator_data.rows):
+			grid[Vector2i(x + 1, y + 1)] = {
+				"x_start" : (x * (generator_data.max_room_width + generator_data.min_space_between_rooms)), 
+				"y_start": (y * (generator_data.max_room_height + generator_data.min_space_between_rooms))}
+	#create rooms for each location in the grid
+	for location in grid:
+		room_listing[location] = _generate_room(grid[location])
+	#connect and draw the rooms
+	_connect_rooms()
 	_draw_rooms()
 
 
-func initialize(inc_min_room_width: int, inc_min_room_height: int, inc_max_room_width: int, inc_max_room_height: int,
-				inc_game_width: int, inc_game_height: int, inc_tile_map_layer: TileMapLayer, inc_draw_outline: bool) -> void:
-	min_room_width = inc_min_room_width
-	min_room_height = inc_min_room_height
-	max_room_width = inc_max_room_width
-	max_room_height = inc_max_room_height
-	game_width = inc_game_width
-	game_height = inc_game_height
-	tile_map_layer = inc_tile_map_layer
-	draw_outline = inc_draw_outline
-	_get_main_tiles()
+func initialize(inc_generator_data: GeneratorData) -> void:
+	generator_data = inc_generator_data
+
 
 func _ready() -> void:
 	pass
 	
-	
-func _get_main_tiles() -> void:
-	var terrains = {}
-	wall_tile_quadrant_size = tile_map_layer.rendering_quadrant_size
-	for terrain in tile_map_layer.tile_set.get_terrains_count(0):
-		terrains[str(terrain)] = tile_map_layer.tile_set.get_terrain_name(0,terrain)
-	var source = tile_map_layer.tile_set.get_source(0)
-	#check every tile to find its terrain
-	for tile in source.get_tiles_count():
-		var tile_data = source.get_tile_data(source.get_tile_id(tile), 0)
-		if tile_data.terrain != -1:
-			match terrains[str(tile_data.terrain)]:
-				"Wall":
-					wall_vector = source.get_tile_id(tile)
-				"Floor":
-					floor_vector = source.get_tile_id(tile)
-				"Filler":
-					filler_vector = source.get_tile_id(tile)
-				"Exit":
-					exit_vector = source.get_tile_id(tile)
-	
+
+func _get_location(room: Vector2i) -> Vector2i:
+	var loc_x = randi_range(room_listing[room]["x"] + 3, room_listing[room]["x"] + room_listing[room]["width"] - 3)
+	var loc_y = randi_range(room_listing[room]["y"] + 3, room_listing[room]["y"] + room_listing[room]["height"] - 3)
+	print("returning ", Vector2i(loc_x, loc_y))
+	return Vector2(loc_x, loc_y)
+
 
 func get_player_start() -> Vector2i:
-	var start_location: Vector2i
-	start_location = Vector2i(randi_range(room_listing["y"] + wall_tile_quadrant_size, (room_listing["width"] - 1) * wall_tile_quadrant_size),
-		randi_range(room_listing["x"] + wall_tile_quadrant_size, (room_listing["height"] - 1) * wall_tile_quadrant_size ))
-	return start_location
+	return _get_location(Vector2i(1, 1))
+
+		
+func get_random_location() -> Vector2i:
+	var room = room_listing.keys()[randi() % room_listing.size()]
+	print(room)
+	return _get_location(room)	
 
 
 func _generate_room(grid_location) -> Dictionary:
 	var room: Dictionary = {}
-	for item in grid_location:
-		room["x"] = randi_range(grid_location[item]["x_start"], 
-			grid_location[item]["x_start"])
-		room["y"] = randi_range(grid_location[item]["y_start"], 
-			grid_location[item]["y_start"])
-		room["width"] = randi_range(min_room_width, max_room_width - (room["x"] - grid_location[item]["x_start"]))
-		room["height"] = randi_range(min_room_height, max_room_height - (room["y"] - grid_location[item]["y_start"]))
+	room["x"] = randi_range(grid_location["x_start"], 
+		grid_location["x_start"] + generator_data.min_space_between_rooms)
+	room["y"] = randi_range(grid_location["y_start"], 
+		grid_location["y_start"] + generator_data.min_space_between_rooms)
+	room["width"] = randi_range(generator_data.min_room_width, 
+		generator_data.max_room_width - (room["x"] - grid_location["x_start"]))
+	room["height"] = randi_range(generator_data.min_room_height, 
+		generator_data.max_room_height - (room["y"] - grid_location["y_start"]))
 	return room
 
 
 func _draw_rooms() -> void:
-	if draw_outline:
-		for x in range(0, game_width):
-			if x % 25 == 0:
-				tile_map_layer.set_cell(Vector2i(x,0), 0, floor_vector)
-			else:
-				tile_map_layer.set_cell(Vector2i(x,0), 0, filler_vector)
-		for y in range(0, game_height):
-			if y % 25 == 0:
-				tile_map_layer.set_cell(Vector2i(0,y), 0, floor_vector)
-			else:
-				tile_map_layer.set_cell(Vector2i(0,y), 0, filler_vector)
+	var floors = []
+	var walls = []
+	var fillers = []
+	if generator_data.draw_outline:
+		for x in range(0, 1600):
+			fillers.append(Vector2i(x,0))
+		for y in range(0, 1200):
+			fillers.append(Vector2i(0,y))
+	for room in room_listing:
+		for x in range(room_listing[room]["x"], (room_listing[room]["x"] + room_listing[room]["width"] + 1)):
+			for y in range(room_listing[room]["y"], (room_listing[room]["y"] + room_listing[room]["height"] + 1)):
+				if x == room_listing[room]["x"] || x == (room_listing[room]["x"] + room_listing[room]["width"]):
+					if not blocked_blocks.has(Vector2i(x, y)):
+						walls.append(Vector2i(x,y))
+				elif y == room_listing[room]["y"] || y == (room_listing[room]["y"] + room_listing[room]["height"]):
+					if not blocked_blocks.has(Vector2i(x, y)):
+						walls.append(Vector2i(x,y))
+				else:
+					floors.append(Vector2i(x,y))
+	for hall in hallways:
+		for x in range(hallways[hall]["x"], (hallways[hall]["x"] + hallways[hall]["width"] + 1)):
+			for y in range(hallways[hall]["y"], (hallways[hall]["y"] + hallways[hall]["height"] + 1)):
+				if x == hallways[hall]["x"] || x == (hallways[hall]["x"] + hallways[hall]["width"]):
+					if not blocked_blocks.has(Vector2i(x, y)):
+						walls.append(Vector2i(x,y))
+				elif y == hallways[hall]["y"] || y == (hallways[hall]["y"] + hallways[hall]["height"]):
+					if not blocked_blocks.has(Vector2i(x, y)):
+						walls.append(Vector2i(x,y))
+				else:
+					floors.append(Vector2i(x, y))
+	exit_vector.append(get_random_location())
 
-	for x in range(room_listing["x"], (room_listing["x"] + room_listing["width"] + 1)):
-		for y in range(room_listing["y"], (room_listing["y"] + room_listing["height"] + 1)):
-			if x == room_listing["x"] || x == (room_listing["x"] + room_listing["width"]):
-				tile_map_layer.set_cell(Vector2i(x,y), 0, wall_vector)
-			elif y == room_listing["y"] || y == (room_listing["y"] + room_listing["height"]):
-				tile_map_layer.set_cell(Vector2i(x,y), 0, wall_vector)
+	floors = floors + blocked_blocks
+	
+	generator_data.tile_map_layer.z_index = -1
+	generator_data.tile_map_layer.set_cells_terrain_connect(fillers, 0, TileLayer.Filler, false)	
+	generator_data.tile_map_layer.set_cells_terrain_connect(walls, 0, TileLayer.Wall, false)
+	generator_data.tile_map_layer.set_cells_terrain_connect(floors, 0, TileLayer.Floor, false)
+	generator_data.tile_map_layer.set_cells_terrain_connect(exit_vector, 0, TileLayer.Exit, false)
+	
+
+func _connect_rooms():
+	var left_1: int
+	var right_1: int
+	var top_1: int
+	var bottom_1: int
+	var left_2: int
+	var right_2: int
+	var top_2: int
+	var bottom_2: int
+	var left_start: int
+	var right_end: int
+	var top_start: int
+	var bottom_end: int
+	var connector: int
+	var neighbor: Vector2i
+	
+	#location is stored as x = cols, y = rows
+	for location in grid:
+		if location.y < generator_data.rows:
+			#need a connection down, or vertical hallway
+			#find the overlap
+			left_1 = room_listing[location]["x"]
+			right_1 = room_listing[location]["x"] + room_listing[location]["width"]
+			neighbor = Vector2i(location.x, location.y + 1)
+			left_2 = room_listing[neighbor]["x"]
+			right_2 = room_listing[neighbor]["x"] + room_listing[neighbor]["width"]
+			if left_1 < left_2:
+				left_start = left_2
 			else:
-				tile_map_layer.set_cell(Vector2i(x,y), 0, floor_vector)
+				left_start = left_1
+			if right_1 > right_2:
+				right_end = right_2 - generator_data.ver_hallway_width
+			else:
+				right_end = right_1 - generator_data.ver_hallway_width
+			connector = randi_range(left_start, right_end)
+			for i in range(1, generator_data.ver_hallway_width):
+				var value = Vector2i(connector + i, room_listing[location]["y"] + room_listing[location]["height"])
+				blocked_blocks.append(value)
+				value = Vector2i(connector + i, room_listing[neighbor]["y"])
+				blocked_blocks.append(value)
+			var height = room_listing[neighbor]["y"] - (room_listing[location]["y"] + room_listing[location]["height"])
+			_add_hallway(connector, room_listing[location]["y"] + room_listing[location]["height"], generator_data.ver_hallway_width, height )
+			room_listing[location]["bottom_connector_start"] = connector
+			room_listing[location]["bottom_connector_end"] = connector + generator_data.ver_hallway_width
+			room_listing[neighbor]["top_connector_start"] = connector
+			room_listing[neighbor]["top_connector_end"] = connector + generator_data.ver_hallway_width
+		if location.x < generator_data.columns:
+			#need a connection to the right, or horizontal hallway
+			top_1 = room_listing[location]["y"]
+			bottom_1 = room_listing[location]["y"] + room_listing[location]["height"]
+			neighbor = Vector2i(location.x + 1, location.y)
+			top_2 = room_listing[neighbor]["y"]
+			bottom_2 = room_listing[neighbor]["y"] + room_listing[neighbor]["height"]
+			if top_1 < top_2:
+				top_start = top_2
+			else:
+				top_start = top_1
+			if bottom_1 > bottom_2:
+				bottom_end = bottom_2 - generator_data.hor_hallway_height
+			else:
+				bottom_end = bottom_1 - generator_data.hor_hallway_height
+			connector = randi_range(top_start, bottom_end)
+			for i in range(1, generator_data.hor_hallway_height):
+				var value = Vector2i(Vector2i(room_listing[location]["x"] + room_listing[location]["width"], connector + i ))
+				blocked_blocks.append(value)
+				value = Vector2i(room_listing[neighbor]["x"] ,connector + i )
+				blocked_blocks.append(value)
+			var width = room_listing[neighbor]["x"] - (room_listing[location]["x"] + room_listing[location]["width"])
+			_add_hallway(room_listing[location]["x"] + room_listing[location]["width"], connector, width, generator_data.hor_hallway_height )
+			room_listing[location]["right_connector_start"] = connector
+			room_listing[location]["right_connector_end"] = connector + generator_data.hor_hallway_height
+			room_listing[neighbor]["left_connector_start"] = connector
+			room_listing[neighbor]["left_connector_end"] = connector + generator_data.hor_hallway_height
+
+
+func _add_hallway(x: int, y: int, width: int, height: int) -> void:
+	var hallway_len: int = len(hallways) + 1
+	hallways[str(hallway_len)] = {"x": x, "y": y, "width": width, "height": height}

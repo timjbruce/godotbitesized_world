@@ -34,8 +34,6 @@ func _physics_process(delta):
 								scram_target.emit(obj)
 								_has_target = true
 								_scram_target = true
-							else:
-								print("ScramCircle: Not looking for ", obj.name)
 			if not _scram_target and _has_target:
 				_has_target = false
 				scram_target_clear.emit()

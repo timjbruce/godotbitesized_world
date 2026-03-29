@@ -155,11 +155,10 @@ script = ExtResource("1_8a836")
 [node name="GlobalTimer" type="Timer" parent="."]
 
 [node name="Generator" parent="." instance=ExtResource("3_j8job")]
-min_room_width = 50
-min_room_height = 50
+rows = 5
+columns = 5
 max_room_width = 75
 max_room_height = 75
-draw_outline = true
 
 [node name="EnemySpriteAnimation" type="AnimatedSprite2D" parent="."]
 visible = false

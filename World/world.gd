@@ -18,7 +18,7 @@ func _on_floor_generated() -> void:
 	var player_layers: Array[int] =  [3]
 	var player_masks: Array[int] = [2, 4, 5]
 	Globals.player.initialize("player", 700, player_layers, player_masks, PlayerShared.PlayerType.Player, null)
-	Globals.player.set_location(Globals.generator.get_player_start())
+	Globals.player.set_location(Globals.generator.get_player_start()*16)
 	var enemy: player_2d_body
 	var enemy_layers: Array[int] = [4]
 	var enemy_masks: Array[int] = [2, 3, 4, 5]
@@ -27,7 +27,7 @@ func _on_floor_generated() -> void:
 		Globals.add_enemy(enemy)
 		Globals.world.add_child(enemy)
 		Globals.enemies[i].initialize("enemy_" + str(i), 300, enemy_layers, enemy_masks, PlayerShared.PlayerType.Enemy, $EnemySpriteAnimation)
-		Globals.enemies[i].set_location(Globals.generator.get_player_start())
+		Globals.enemies[i].set_location(Globals.generator.get_random_location()*16)
 	var npc: player_2d_body
 	var npc_layers: Array[int] = [5]
 	var npc_masks: Array[int] = [2, 3, 4, 5]
@@ -36,7 +36,7 @@ func _on_floor_generated() -> void:
 		Globals.add_npc(npc)
 		Globals.world.add_child(npc)
 		Globals.npcs[i].initialize("npc_" + str(i), 350, npc_layers, npc_masks, PlayerShared.PlayerType.NPC, $EnemySpriteAnimation)
-		Globals.npcs[i].set_location(Globals.generator.get_player_start())
+		Globals.npcs[i].set_location(Globals.generator.get_random_location()*16)
 	
 func _on_floor_cleared() -> void:
 	print("floor cleared message received")

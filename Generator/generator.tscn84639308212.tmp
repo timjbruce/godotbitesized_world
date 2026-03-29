@@ -52,9 +52,10 @@ sources/0 = SubResource("TileSetAtlasSource_7feih")
 
 [node name="Generator" type="Node2D" node_paths=PackedStringArray("tile_map_layer")]
 script = ExtResource("1_8emip")
-rows = 2
-columns = 2
-min_space_between_rooms = 0
+columns = 3
+max_space_between_rooms = 5
+min_room_width = 10
+min_room_height = 10
 max_room_width = 20
 max_room_height = 20
 tile_map_layer = NodePath("DefaultTileMap")
